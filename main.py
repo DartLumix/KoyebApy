@@ -106,7 +106,7 @@ def hello_world():
     with open('lessons.json', 'r', encoding='utf-8') as f:
         lessons_data = json.load(f)
 
-    return jsonify(lessons_data)
+    return lessons_data
  
  
 if __name__ == "__main__":
