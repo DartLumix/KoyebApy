@@ -107,7 +107,12 @@ def hello_world():
         lessons_data = json.load(f)
 
     return lessons_data
+
+@app.route('/sendTrepuzzinator')
+def send_trepuzzinator():
+    return "Trepuzzinator is working"
  
  
 if __name__ == "__main__":
     app.run()
+
