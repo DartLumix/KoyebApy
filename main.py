@@ -1,11 +1,14 @@
-from flask import Flask
-app = Flask(__name__)
-
+from flask import Flask, jsonify, request
 import requests
 from datetime import datetime
 import json
+import threading
+import uuid
 
-isCalled = False
+
+app = Flask(__name__)
+pending_messages = {}
+lock = threading.Lock()
 
 class Lesson:
     def __init__(self, subject, teachers, date, begin, end, classroom):
@@ -109,19 +112,41 @@ def hello_world():
         lessons_data = json.load(f)
 
     return lessons_data
- 
-@app.route('/getTrepuzzinator')
-def get_trepuzzinator():
-    if isCalled:
-        return "Got Trepuzzinator"
-    else: 
-        return "Trepuzzinator is not calling"
 
-@app.route('/sendTrepuzzinator')
+
+
+## Trepuzzinator
+@app.route('/sendTrepuzzinator', methods=['POST'])
 def send_trepuzzinator():
-    isCalled = True
-    return "Trepuzzinator is working"
+    msg_id = str(uuid.uuid4())
+    event = threading.Event()
+    
+    with lock:
+        pending_messages[msg_id] = {
+            'event': event,
+            'message': request.json.get('data')
+        }
+    
+    # Wait max 30 seconds for receiver
+    if not event.wait(timeout=30):
+        with lock:
+            del pending_messages[msg_id]
+        return jsonify(error="Timeout: No receiver connected"), 408
+    
+    return jsonify(status="Message delivered"), 200
 
+@app.route('/getTrepuzzinator', methods=['GET'])
+def get_trepuzzinator():
+    with lock:
+        if not pending_messages:
+            return jsonify(error="No pending messages"), 404
+            
+        msg_id, data = next(iter(pending_messages.items()))
+        message = data['message']
+        del pending_messages[msg_id]
+        data['event'].set()
+
+    return jsonify(message=message), 200
  
 if __name__ == "__main__":
     app.run()
