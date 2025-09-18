@@ -5,6 +5,8 @@ import requests
 from datetime import datetime
 import json
 
+isCalled = False
+
 class Lesson:
     def __init__(self, subject, teachers, date, begin, end, classroom):
         self.subject = subject
@@ -107,11 +109,19 @@ def hello_world():
         lessons_data = json.load(f)
 
     return lessons_data
+ 
+@app.route('/getTrepuzzinator')
+def get_trepuzzinator():
+    if isCalled:
+        return "Got Trepuzzinator"
+    else: 
+        return "Trepuzzinator is not calling"
 
 @app.route('/sendTrepuzzinator')
 def send_trepuzzinator():
+    isCalled = True
     return "Trepuzzinator is working"
- 
+
  
 if __name__ == "__main__":
     app.run()
